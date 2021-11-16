@@ -1,77 +1,82 @@
 <template>
   <v-row justify="center" align="center">
-    <v-col cols="12" sm="8" md="6">
-      <v-card class="logo py-4 d-flex justify-center">
-        <NuxtLogo />
-        <VuetifyLogo />
-      </v-card>
+    <v-col cols="12" sm="12" md="12">
       <v-card>
         <v-card-title class="headline">
-          Welcome to the Vuetify + Nuxt.js template
+          自己紹介
         </v-card-title>
-        <v-card-text>
-          <p>Vuetify is a progressive Material Design component framework for Vue.js. It was designed to empower developers to create amazing applications.</p>
-          <p>
-            For more information on Vuetify, check out the <a
-              href="https://vuetifyjs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              documentation
-            </a>.
-          </p>
-          <p>
-            If you have questions, please join the official <a
-              href="https://chat.vuetifyjs.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="chat"
-            >
-              discord
-            </a>.
-          </p>
-          <p>
-            Find a bug? Report it on the github <a
-              href="https://github.com/vuetifyjs/vuetify/issues"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="contribute"
-            >
-              issue board
-            </a>.
-          </p>
-          <p>Thank you for developing with Vuetify and I look forward to bringing more exciting features in the future.</p>
-          <div class="text-xs-right">
-            <em><small>&mdash; John Leider</small></em>
-          </div>
-          <hr class="my-3">
-          <a
-            href="https://nuxtjs.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt Documentation
-          </a>
-          <br>
-          <a
-            href="https://github.com/nuxt/nuxt.js"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Nuxt GitHub
-          </a>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            color="primary"
-            nuxt
-            to="/inspire"
-          >
-            Continue
-          </v-btn>
-        </v-card-actions>
+        <OrganismsForm
+          :base-url="baseUrl"
+          :editing-id="editingId"
+          :initial-name="editingName"
+          :initial-greeting="editingGreeting"
+          @posted="getPosts"
+          @reset="reset"
+        />
+        <OrganismsCardList
+          :posts="posts"
+          @editPost="editPost"
+          @deletePost="deletePost"
+        />
       </v-card>
     </v-col>
   </v-row>
 </template>
+
+<script>
+export default {
+  data () {
+    return {
+      baseUrl: 'https://restful.vclbuff.com/api/members',
+      posts: [],
+      editingId: null
+    }
+  },
+  fetch () {
+    this.getPosts()
+  },
+  computed: {
+    editingName () {
+      if (this.editingId) {
+        const post = this.posts
+          .find(item => item.id === this.editingId)
+        return post.name
+      } else {
+        return ''
+      }
+    },
+    editingGreeting () {
+      if (this.editingId) {
+        const post = this.posts
+          .find(item => item.id === this.editingId)
+        return post.greeting
+      } else {
+        return ''
+      }
+    }
+  },
+  methods: {
+    async getPosts () {
+      this.posts = await this.$axios.get(this.baseUrl)
+        .then(response => response.data)
+    },
+    editPost (id) {
+      this.editingId = id
+    },
+    deletePost (id) {
+      const result = confirm('投稿内容を削除しますか？')
+      if (!result) {
+        return
+      }
+      this.$axios.delete(`${this.baseUrl}/${id}`)
+        .then((response) => {
+          this.posts = this.posts
+            .filter(item => item.id !== id)
+        })
+    },
+    reset () {
+      this.editingId = null
+    }
+  }
+}
+</script>
